@@ -2,22 +2,20 @@ require 'sinatra'
 require 'octokit'
 require 'json'
 require 'dotenv/load'
+require 'openssl'
+require 'jwt'
 require 'smee'
 
 set :port, 3000
 
-# Setup Smee client to forward webhooks
-SmeeClient.new(source: 'https://smee.io/f3VcLr3EgnSaZTV',
-target: 'http://localhost:3000/events').start
-
-# Helper method to get GitHub client
+# Method to authenticate and obtain a GitHub client
 def github_client
   private_pem = File.read(ENV['GITHUB_PRIVATE_KEY_PATH'])
   app_id = ENV['GITHUB_APP_IDENTIFIER']
 
   jwt_payload = {
     iat: Time.now.to_i,
-    exp: Time.now.to_i + (10 * 60),
+    exp: Time.now.to_i + (10 * 60),  # Token expiry of 10 minutes
     iss: app_id
   }
 
@@ -30,6 +28,7 @@ def github_client
   Octokit::Client.new(access_token: access_token)
 end
 
+# Handle incoming webhook
 post '/payload' do
   request.body.rewind
   payload = JSON.parse(request.body.read)
@@ -46,3 +45,6 @@ post '/payload' do
 
   status 200
 end
+
+# Start Smee client to forward GitHub webhooks to localhost
+SmeeClient.new(source: ENV['SMEE_URL'], target: 'http://localhost:3000/payload').start

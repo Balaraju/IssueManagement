@@ -7,5 +7,5 @@ gem 'dotenv'
 gem 'smee'
 gem 'rack'
 gem 'rackup'
+gem 'jwt'
 
-# gem "rails"
